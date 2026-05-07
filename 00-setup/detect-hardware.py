@@ -80,6 +80,12 @@ def detect_ram_gb() -> float:
         except OSError:
             return 0.0
     if sys_plat == "win32":
+        # Try PowerShell first (more modern)
+        rc, out = run(["powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory"])
+        if rc == 0 and out.strip().isdigit():
+            return round(int(out.strip()) / 1024**3, 1)
+
+        # Fallback to wmic
         rc, out = run(["wmic", "computersystem", "get", "TotalPhysicalMemory", "/format:value"])
         for line in out.splitlines():
             if line.startswith("TotalPhysicalMemory="):
